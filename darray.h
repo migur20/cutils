@@ -1,10 +1,5 @@
-#include <ctype.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <stdio.h>
 
 #define da_define(Type, Name)                                                  \
   typedef struct {                                                             \
@@ -12,8 +7,6 @@
     size_t count;                                                              \
     size_t capacity;                                                           \
   } Name;
-
-da_define(char *, DArray)
 
 #define da_init(da)                                                      \
   do {                                                                         \
@@ -31,22 +24,6 @@ da_define(char *, DArray)
       da.data = realloc(da.data, da.capacity * sizeof(da.data[0]));            \
     }                                                                          \
     da.data[da.count++] = elem;                                                \
-  } while (0);
-
-#define da_dump_str(da)                                                        \
-  do {                                                                         \
-    for (size_t i = 0; i < da.count; i++) {                                    \
-      printf("%s ", da.data[i]);                                               \
-    }                                                                          \
-    putchar('\n');                                                             \
-  } while (0);
-
-#define da_dump_int(da)                                                        \
-  do {                                                                         \
-    for (size_t i = 0; i < da.count; i++) {                                    \
-      printf("%d ", da.data[i]);                                               \
-    }                                                                          \
-    putchar('\n');                                                             \
   } while (0);
 
 #define da_destroy(da)                                                         \
