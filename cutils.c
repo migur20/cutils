@@ -6,7 +6,8 @@ void arena_init(Arena *a, size_t size) {
   a->count = 0;
 }
 
-void *arena_alloc(Arena *a, size_t size){
+void *arena_alloc(void *_a, size_t size){
+	Arena *a = (Arena*)_a;
   if (a->count + size <= a->size) {
     a->count += size;
     return a->data + a->count - size;
@@ -108,7 +109,6 @@ char *file_read(const char *path){
 	return buffer;
 }
 
-
 StringBuilder *sb_file_read_delim(const char *path, const char* delim){
 	char *file_str = file_read(path);
 	StringBuilder *sb = malloc(sizeof(*sb));
@@ -131,3 +131,38 @@ void sb_dump(StringBuilder *sb, char* sep){
 	}
 }
 
+
+void sv_init(StringView *sv, const char *src) {
+  sv->start = (char *)src;
+  sv->size = strlen(src);
+}
+
+void sv_dump(StringView *sv) {
+	printf("%.*s", sv->size, sv->start); 
+}
+
+void sv_trim_right(StringView *sv) {
+  if (sv->size > 1)
+    sv->size--;
+}
+
+void sv_trim_n_right(StringView *sv, int n) {
+  for (int i = 0; i < n; i++)
+    sv_trim_right(sv);
+}
+
+void sv_trim_left(StringView *sv) {
+  sv->start++;
+  sv_trim_right(sv);
+}
+void sv_trim_n_left(StringView *sv, int n) {
+  for (int i = 0; i < n; i++)
+    sv_trim_left(sv);
+}
+
+void sv_trim(StringView *sv) {
+  while (isblank(*(sv->start)))
+    sv_trim_left(sv);
+  while (isblank(*(sv->start + sv->size-1)))
+    sv_trim_right(sv);
+}

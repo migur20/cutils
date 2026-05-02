@@ -35,7 +35,7 @@ void arena_init(Arena *a, size_t size);
 /*
  * Allocs <size> bytes of data in arena <a>
  * */
-void *arena_alloc(Arena *a, size_t size);
+void *arena_alloc(void *_a, size_t size);
 /*
  * Allocs <size> bytes of data in arena <a> and copies <data> data into it
  * */
@@ -142,3 +142,17 @@ typedef struct{
 	char *start;
 	int size;
 }StringView;
+
+void sv_init(StringView *sv, const char *src);
+
+void sv_dump(StringView *sv);
+
+void sv_trim_right(StringView *sv);
+
+void sv_trim_n_right(StringView *sv, int n);
+
+void sv_trim_left(StringView *sv);
+
+void sv_trim_n_left(StringView *sv, int n);
+
+void sv_trim(StringView *sv);

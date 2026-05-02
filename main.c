@@ -1,47 +1,27 @@
 #include "cutils.h"
 
-void sv_init(StringView *sv, const char *src) {
-  sv->start = (char *)src;
-  sv->size = strlen(src);
+char *file_read2(const char *path, void*(alloc)(void*, size_t), void *ctx){
+	size_t fsize = file_size(path);
+	char *buffer = alloc(ctx, fsize);
+	int fd = open(path, O_RDONLY);
+	receive_data(fd, buffer, fsize);
+	return buffer;
 }
 
-void sv_dump(StringView *sv) { printf("%.*s", sv->size, sv->start); }
+StringBuilder *sb_file_read_delim2(const char *path, const char *delim, void*(alloc)(void*, size_t), void *ctx){
+	char *file_str = file_read2(path, alloc, ctx);
+	StringBuilder *sb = alloc(ctx, sizeof(*sb));
 
-void sv_trim_right(StringView *sv) {
-  if (sv->size > 1)
-    sv->size--;
-}
-
-void sv_trim_n_right(StringView *sv, int n) {
-  for (int i = 0; i < n; i++)
-    sv_trim_right(sv);
-}
-
-void sv_trim_left(StringView *sv) {
-  sv->start++;
-  sv_trim_right(sv);
-}
-void sv_trim_n_left(StringView *sv, int n) {
-  for (int i = 0; i < n; i++)
-    sv_trim_left(sv);
-}
-
-void sv_trim(StringView *sv) {
-  while (isblank(*(sv->start)))
-    sv_trim_left(sv);
-  while (isblank(*(sv->start + sv->size)))
-    sv_trim_right(sv);
+	char *tok = strtok(file_str, delim);
+	while(tok != NULL){
+		da_push((*sb), tok);
+		tok = strtok(NULL, delim);
+	}
+	return sb;
 }
 
 int main(void) {
-  const char *str = "  Hello, World!!!  ";
-  StringView sv = {0};
-  sv_init(&sv, str);
-
-  putchar('\"');sv_dump(&sv);putchar('\"');
-  putchar('\n');
-
-  sv_trim(&sv);
-
-  putchar('\"');sv_dump(&sv);putchar('\"');
+	Arena a;
+	StringBuilder *sb = sb_file_read_delim2("main.c", "\n", arena_alloc, &a);
+	arena_free(&a);
 }
