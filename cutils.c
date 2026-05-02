@@ -1,4 +1,5 @@
 #include "cutils.h"
+#include <assert.h>
 
 void arena_init(Arena *a, size_t size) {
   a->data = calloc(1, size);
@@ -6,13 +7,13 @@ void arena_init(Arena *a, size_t size) {
   a->count = 0;
 }
 
-void *arena_alloc(void *_a, size_t size){
-	Arena *a = (Arena*)_a;
+void *arena_alloc(void *_a, size_t size) {
+  Arena *a = (Arena *)_a;
   if (a->count + size <= a->size) {
     a->count += size;
     return a->data + a->count - size;
-	}else 
-		return NULL;
+  } else
+    return NULL;
 }
 
 void *arena_alloc_buffer(Arena *a, const void *data, size_t size) {
@@ -31,9 +32,9 @@ void arena_dump(Arena *a, char sep) {
   }
 }
 
-void arena_free(Arena *a){
-	free(a->data);
-	*a = (Arena){0};
+void arena_free(Arena *a) {
+  free(a->data);
+  *a = (Arena){0};
 }
 
 int receive_data(int fd, void *buffer, size_t size) {
@@ -47,11 +48,11 @@ int receive_data(int fd, void *buffer, size_t size) {
   return EXIT_SUCCESS;
 }
 
-void* arena_receive_data(int fd, Arena *a, size_t size) {
-	char *buffer = arena_alloc(a, size);
-	if(receive_data(fd, buffer, size) == EXIT_FAILURE)
-		return NULL;
-	return buffer;
+void *arena_receive_data(int fd, Arena *a, size_t size) {
+  char *buffer = arena_alloc(a, size);
+  if (receive_data(fd, buffer, size) == EXIT_FAILURE)
+    return NULL;
+  return buffer;
 }
 
 int send_data(int fd, void *buffer, size_t size) {
@@ -89,57 +90,27 @@ int create_inet_socket(int port) {
   return sockfd;
 }
 
-size_t file_size(const char *path){
-	struct stat s = {0};
-	stat(path, &s);
-	return s.st_size - 1;
+size_t file_size(const char *path) {
+  struct stat s = {0};
+  stat(path, &s);
+  return s.st_size - 1;
 }
 
-char *arena_file_read(Arena *a, const char *path){
-	size_t fsize = file_size(path);
-	int fd = open(path, O_RDONLY);
-	return arena_receive_data(fd, a, fsize);
+StringBuilder *sb_file_read(const char *path, void *(alloc)(void *, size_t),
+                            void *ctx) {
+  return sb_file_read_delim(path, " \n\t", alloc, ctx);
 }
 
-char *file_read(const char *path){
-	size_t fsize = file_size(path);
-	char *buffer = calloc(1, fsize);
-	int fd = open(path, O_RDONLY);
-	receive_data(fd, buffer, fsize);
-	return buffer;
+void sb_dump(StringBuilder *sb, char *sep) {
+  da_foreach((*sb), char *, it) { printf("%s%s", *it, sep); }
 }
-
-StringBuilder *sb_file_read_delim(const char *path, const char* delim){
-	char *file_str = file_read(path);
-	StringBuilder *sb = malloc(sizeof(*sb));
-
-	char *tok = strtok(file_str, delim);
-	while(tok != NULL){
-		da_push((*sb), tok);
-		tok = strtok(NULL, delim);
-	}
-	return sb;
-}
-
-StringBuilder *sb_file_read(const char *path){
-	return sb_file_read_delim(path, " \n\t");
-}
-
-void sb_dump(StringBuilder *sb, char* sep){
-	da_foreach((*sb), char*, it){
-		printf("%s%s", *it, sep);
-	}
-}
-
 
 void sv_init(StringView *sv, const char *src) {
   sv->start = (char *)src;
   sv->size = strlen(src);
 }
 
-void sv_dump(StringView *sv) {
-	printf("%.*s", sv->size, sv->start); 
-}
+void sv_dump(StringView *sv) { printf("%.*s", sv->size, sv->start); }
 
 void sv_trim_right(StringView *sv) {
   if (sv->size > 1)
@@ -163,6 +134,34 @@ void sv_trim_n_left(StringView *sv, int n) {
 void sv_trim(StringView *sv) {
   while (isblank(*(sv->start)))
     sv_trim_left(sv);
-  while (isblank(*(sv->start + sv->size-1)))
+  while (isblank(*(sv->start + sv->size - 1)))
     sv_trim_right(sv);
+}
+
+void *heap_alloc(void *data, size_t size) {
+  void *ret = calloc(1, size);
+  if (data != NULL)
+    memcpy(ret, data, size);
+  return ret;
+}
+
+char *file_read(const char *path, void *(alloc)(void *, size_t), void *ctx) {
+  size_t fsize = file_size(path);
+  char *buffer = alloc(ctx, fsize);
+  int fd = open(path, O_RDONLY);
+  receive_data(fd, buffer, fsize);
+  return buffer;
+}
+
+StringBuilder *sb_file_read_delim(const char *path, const char *delim,
+                                  void *(alloc)(void *, size_t), void *ctx) {
+  char *file_str = file_read(path, alloc, ctx);
+  StringBuilder *sb = alloc(ctx, sizeof(*sb));
+
+  char *tok = strtok(file_str, delim);
+  while (tok != NULL) {
+    da_push((*sb), tok);
+    tok = strtok(NULL, delim);
+  }
+  return sb;
 }

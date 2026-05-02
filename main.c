@@ -1,27 +1,71 @@
 #include "cutils.h"
+#include <alloca.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <unistd.h>
 
-char *file_read2(const char *path, void*(alloc)(void*, size_t), void *ctx){
-	size_t fsize = file_size(path);
-	char *buffer = alloc(ctx, fsize);
-	int fd = open(path, O_RDONLY);
-	receive_data(fd, buffer, fsize);
-	return buffer;
+typedef struct{
+	void *key;
+	void *data;
+} Pair;
+
+da_define(Pair, Map);
+
+int cmp(void *d1, void *d2){
+	return strcmp((char*)d1, (char*)d2);
 }
 
-StringBuilder *sb_file_read_delim2(const char *path, const char *delim, void*(alloc)(void*, size_t), void *ctx){
-	char *file_str = file_read2(path, alloc, ctx);
-	StringBuilder *sb = alloc(ctx, sizeof(*sb));
-
-	char *tok = strtok(file_str, delim);
-	while(tok != NULL){
-		da_push((*sb), tok);
-		tok = strtok(NULL, delim);
+void *map_get(Map *map, void *key, int(cmp)(void*,void*)){
+	da_foreach((*map), Pair, it){
+		if(cmp(key, it->key) == 0){
+			return it->data;
+		}
 	}
-	return sb;
+	return NULL;
 }
 
-int main(void) {
-	Arena a;
-	StringBuilder *sb = sb_file_read_delim2("main.c", "\n", arena_alloc, &a);
-	arena_free(&a);
+void map_put(Map *map, void *key, void *data){
+	Pair p = {
+		.key = key,
+		.data = data,
+	};
+	da_push((*map), p);
+}
+
+int read_line(int fd, char *buffer){
+	int i = 0;
+	char c;
+	while((c = getchar()) != '\n' && c != EOF)
+		buffer[i++] = c;
+	return i;
+}
+
+da_define(char, String);
+int str_read_line(int fd, String *s){
+	int i = s->count;
+	char c;
+	while((c = getchar()) != '\n' && c != EOF)
+		da_push((*s), c);
+	return i;
+}
+
+int main(void){
+	Map map = {0};
+	int age = 20;
+	map_put(&map, "Joao", heap_alloc(&age, sizeof(age))); age++;
+	map_put(&map, "Migu", heap_alloc(&age, sizeof(age))); age++;
+	map_put(&map, "John", heap_alloc(&age, sizeof(age))); age++;
+	map_put(&map, "Mike", heap_alloc(&age, sizeof(age))); age++;
+
+	da_foreach(map, Pair, it){
+		printf("%s, %d\n", (char*)it->key, *(int*)it->data);
+	}
+
+	Arena a = {0};
+	arena_init(&a, 1048);
+	char *s = arena_alloc(&a, 512);
+	while(read_line(STDOUT_FILENO, s) != 0){
+		printf("%s\n", s);
+	}
+	arena_dump(&a, ' ');
 }

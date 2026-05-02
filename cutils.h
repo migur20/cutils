@@ -1,9 +1,7 @@
 #include <arpa/inet.h>
-#include <fcntl.h>
-#include <netinet/in.h>
-#include <stddef.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <netinet/in.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -128,20 +126,12 @@ da_define(char *, StringBuilder);
 
 void sb_dump(StringBuilder *sb, char *sep);
 
-StringBuilder *sb_file_read(const char *path);
-
-StringBuilder *sb_file_read_delim(const char *path, const char *delim);
-
-char *file_read(const char *path);
-
-char *arena_file_read(Arena *a, const char *path);
-
 size_t file_size(const char *path);
 
-typedef struct{
-	char *start;
-	int size;
-}StringView;
+typedef struct {
+  char *start;
+  int size;
+} StringView;
 
 void sv_init(StringView *sv, const char *src);
 
@@ -156,3 +146,13 @@ void sv_trim_left(StringView *sv);
 void sv_trim_n_left(StringView *sv, int n);
 
 void sv_trim(StringView *sv);
+
+void *heap_alloc(void *data, size_t size);
+
+char *file_read(const char *path, void *(alloc)(void *, size_t), void *ctx);
+
+StringBuilder *sb_file_read_delim(const char *path, const char *delim,
+                                  void *(alloc)(void *, size_t), void *ctx);
+
+StringBuilder *sb_file_read(const char *path, void *(alloc)(void *, size_t),
+                            void *ctx);
