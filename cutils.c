@@ -1,5 +1,6 @@
 #include "cutils.h"
 #include <assert.h>
+#include <stddef.h>
 
 void arena_init(Arena *a, size_t size) {
   a->data = calloc(1, size);
@@ -8,6 +9,16 @@ void arena_init(Arena *a, size_t size) {
 }
 
 void *arena_alloc(void *_a, size_t size) {
+  Arena *a = (Arena *)_a;
+  if (a->count + size <= a->size) {
+    a->count += size;
+    return a->data + a->count - size;
+  } else
+    return NULL;
+}
+
+void *arena_calloc(void *_a, size_t nelem, size_t _size) {
+	size_t size = _size * nelem;
   Arena *a = (Arena *)_a;
   if (a->count + size <= a->size) {
     a->count += size;
@@ -26,9 +37,9 @@ void *arena_alloc_buffer(Arena *a, const void *data, size_t size) {
     return NULL;
 }
 
-void arena_dump(Arena *a, char sep) {
+void arena_dump(Arena *a, char* sep) {
   for (char *it = a->data; it < (char *)a->data + a->size; it++) {
-    printf("%hhx%c", *it, sep);
+    printf("%hhx%s", *it, sep);
   }
 }
 
@@ -140,7 +151,7 @@ void sv_trim(StringView *sv) {
 
 void *heap_alloc(void *data, size_t size) {
   void *ret = calloc(1, size);
-  if (data != NULL)
+  if (data != NULL && ret != NULL)
     memcpy(ret, data, size);
   return ret;
 }

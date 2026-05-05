@@ -35,13 +35,17 @@ void arena_init(Arena *a, size_t size);
  * */
 void *arena_alloc(void *_a, size_t size);
 /*
+ * Allocs <nelem> values of <size> bytes each in arena <a>
+ * */
+void *arena_calloc(void *_a, size_t nelem, size_t _size) {
+/*
  * Allocs <size> bytes of data in arena <a> and copies <data> data into it
  * */
 void *arena_alloc_buffer(Arena *a, const void *data, size_t size);
 /*
  * Prints the content of the arena as bytes with separator <sep>
  * */
-void arena_dump(Arena *a, char sep);
+void arena_dump(Arena *a, char* sep);
 /*
  * Frees Arena <a> data and sets all of its paramaters to 0 (NULL)
  * */
